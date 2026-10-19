@@ -114,6 +114,7 @@ Button2 btn_home;
 #endif
 
 ChronosESP32 watch("Chronos C3");
+int watchBattery = 85;
 Preferences prefs;
 
 #ifdef ENABLE_APP_QMI8658C
@@ -1379,9 +1380,11 @@ void onCustomFaceSelected(int pathIndex)
 #ifdef ENABLE_MAX17048_BATTERY
   float soc = batteryGauge.getSoC();
   watch.setBattery((int)soc);
+  watchBattery = (int)soc;
 #elif defined ENABLE_CW2015_BATTERY
   float capacity = batteryGauge.capacity();
   watch.setBattery((int)capacity);
+  watchBattery = (int)capacity;
 #endif
 
   lv_screen_load_anim(ui_home, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, false);
@@ -1394,6 +1397,7 @@ void onBatteryChange(lv_event_t *e)
 {
   uint8_t lvl = lv_slider_get_value(ui_batterySlider);
   watch.setBattery(lvl);
+  watchBattery = lvl;
 }
 
 void onStartSearch(lv_event_t *e)
@@ -1777,9 +1781,11 @@ void btn_home_handler(Button2 &btn)
 #ifdef ENABLE_MAX17048_BATTERY
       float soc = batteryGauge.getSoC();
       watch.setBattery((int)soc);
+  watchBattery = (int)soc;
 #elif defined ENABLE_CW2015_BATTERY
       float capacity = batteryGauge.capacity();
       watch.setBattery((int)capacity);
+  watchBattery = (int)capacity;
 #endif
     }
     if (screenTimer.active && screenTimer.duration > 1 && actScr == ui_home)
@@ -2060,6 +2066,7 @@ void hal_setup()
   batteryGauge.begin();
   float soc = batteryGauge.getSoC();
   watch.setBattery((int)soc);
+  watchBattery = (int)soc;
   Serial.printf("MAX17048 - Initial Battery Level: %.2f%%\n", soc);
 #elif defined ENABLE_CW2015_BATTERY
   batteryGauge.begin();
@@ -2078,9 +2085,11 @@ void hal_setup()
   float cw_voltage = batteryGauge.voltage();
   float capacity = batteryGauge.capacity();
   watch.setBattery((int)capacity);
+  watchBattery = (int)capacity;
   Serial.printf("CW2015 - Voltage: %.3fV, Battery Level: %.2f%%\n", cw_voltage, capacity);
 #else
-  watch.setBattery(85); // Default value if no battery gauge is enabled
+  watch.setBattery(85);
+  watchBattery = 85; // Default value if no battery gauge is enabled
 #endif
 
   // Configure BUTTON_HOME as external wakeup source for light sleep
@@ -2300,10 +2309,12 @@ void hal_loop()
 #ifdef ENABLE_MAX17048_BATTERY
         float soc = batteryGauge.getSoC();
         watch.setBattery((int)soc);
+  watchBattery = (int)soc;
         Serial.printf("MAX17048 - Updated Battery Level: %.2f%%\n", soc);
 #elif defined ENABLE_CW2015_BATTERY
         float capacity = batteryGauge.capacity();
         watch.setBattery((int)capacity);
+  watchBattery = (int)capacity;
         Serial.printf("CW2015 - Voltage: %.3fV, Battery Level: %.2f%%\n", batteryGauge.voltage(), capacity);
 #endif
         lastBatteryUpdate = millis();
@@ -2404,8 +2415,8 @@ void hal_loop()
 
     if (actScr == ui_appInfoScreen)
     {
-      lv_label_set_text_fmt(ui_appBatteryText, "Battery - %d%%", watch.getBattery());
-      lv_bar_set_value(ui_appBatteryLevel, watch.getBattery(), LV_ANIM_OFF);
+      lv_label_set_text_fmt(ui_appBatteryText, "Battery - %d%%", watchBattery);
+      lv_bar_set_value(ui_appBatteryLevel, watchBattery, LV_ANIM_OFF);
       if (watch.isPhoneCharging())
       {
         lv_image_set_src(ui_appBatteryIcon, &ui_img_battery_plugged_png);
@@ -2466,9 +2477,11 @@ void hal_loop()
 #ifdef ENABLE_MAX17048_BATTERY
           float soc = batteryGauge.getSoC();
           watch.setBattery((int)soc);
+  watchBattery = (int)soc;
 #elif defined ENABLE_CW2015_BATTERY
           float capacity = batteryGauge.capacity();
           watch.setBattery((int)capacity);
+  watchBattery = (int)capacity;
 #endif
           
           // Wait a short time for Bluetooth to reconnect
@@ -2591,7 +2604,7 @@ void update_faces()
   int temp = watch.getWeatherAt(0).temp;
   int icon = watch.getWeatherAt(0).icon;
 
-  int battery = watch.getBattery();
+  int battery = watchBattery;
   bool connection = watch.isConnected();
 
   int steps = 2735;

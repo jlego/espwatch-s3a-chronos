@@ -190,7 +190,6 @@
 
 #define BL 14
 #define VIBRATION_PIN 9
-// #define VIBRATION_PIN 47
 #define BUTTON_HOME 0
 #define MAX_FILE_OPEN 20
 
@@ -199,19 +198,24 @@
 #define SCREEN_WIDTH 410
 #define SCREEN_HEIGHT 502
 
-#define LCD_CS 12
-#define LCD_SCK 11
-#define LCD_SD0 4
-#define LCD_SD1 5
-#define LCD_SD2 6
-#define LCD_SD3 7
-#define LCD_RST 8
+#define LCD_CS 40
+#define LCD_SCK 5
+#define LCD_SD0 6
+#define LCD_SD1 7
+#define LCD_SD2 12
+#define LCD_SD3 42
+#define LCD_RST 4
+#define LCD_EN 47
 
-#define TOUCH_SDA 15
-#define TOUCH_SCL 14
-#define TOUCH_RST 9
-#define TOUCH_IRQ 38
+#define I2C_SDA 1
+#define I2C_SCL 2
+#define TOUCH_SDA 1
+#define TOUCH_SCL 2
+#define TOUCH_RST 38
+#define TOUCH_IRQ 39
 
+#define BUTTON_HOME 0
+#define VIBRATION_PIN 9
 #define MAX_FILE_OPEN 10
 
 #elif M5_STACK_DIAL

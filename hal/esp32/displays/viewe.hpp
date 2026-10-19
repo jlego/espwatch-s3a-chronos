@@ -3,11 +3,7 @@
 #include <Arduino.h>
 
 #include "Arduino_GFX_Library.h"
-#ifdef ESPS3_2_06
-#include "TouchDrvFT6X36.hpp"
-#else
 #include "TouchDrvCSTXXX.hpp"
-#endif
 #include "pins.h"
 
 #define TFT_BLACK 0x00000
@@ -17,11 +13,7 @@ class DisplayWrapper
 public:
     Arduino_GFX *gfx;
 
-#ifdef ESPS3_2_06
-    TouchDrvFT6X36 touch;
-#else
     TouchDrvCSTXXX touch;
-#endif
 
     DisplayWrapper()
     {
@@ -62,7 +54,7 @@ public:
         touch.setMaxCoordinates(466, 466);
         touch.setMirrorXY(true, true);
 #elif defined(ESPS3_2_06)
-        touch.begin(Wire, 0x38, TOUCH_SDA, TOUCH_SCL);
+        touch.begin(Wire, 0x5A, TOUCH_SDA, TOUCH_SCL);
 #else
         touch.begin(Wire, 0x15, TOUCH_SDA, TOUCH_SCL);
 #endif
