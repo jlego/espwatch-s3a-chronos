@@ -231,7 +231,7 @@
 
 #define PA_PIN       48
 
-#elif ESPS3B3_1_83
+#elif ESPS3B4_1_83
 
 // screen configs
 #define SCREEN_WIDTH 240
@@ -244,7 +244,7 @@
 #define I2C_SDA 1
 #define I2C_SCL 2
 #define TP_INT 46
-#define TP_RST 7
+#define TP_RST 13
 
 // display
 #define LGFX_SPI_DEFAULT_INSTANCE SPI3_HOST
@@ -262,10 +262,10 @@
 #define MAX_FILE_OPEN 20
 
 #define I2S_MCLK 21
-#define I2S_WS 14
+#define I2S_WS 16
 #define I2S_BCLK 18
 #define I2S_DIN  17
-#define I2S_DOUT 13
+#define I2S_DOUT 15
 
 #define PA_PIN       48
 

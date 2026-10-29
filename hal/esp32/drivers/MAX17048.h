@@ -24,7 +24,7 @@ private:
     TwoWire *_wire;
     uint8_t _address;
     
-    uint16_t readRegister(uint8_t reg);
+    bool readRegister(uint8_t reg, uint16_t &value);
     void writeRegister(uint8_t reg, uint16_t data);
 };
 

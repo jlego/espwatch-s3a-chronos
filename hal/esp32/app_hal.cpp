@@ -85,6 +85,7 @@ Encoder myEnc(ENCODER_A, ENCODER_B);
 #ifdef ENABLE_RTC
 #include <RtcPCF8563.h>
 RtcPCF8563<TwoWire> Rtc(Wire);
+bool rtcAvailable = false;
 #endif
 
 #if ESPS3_2_06
@@ -116,6 +117,51 @@ Button2 btn_home;
 ChronosESP32 watch("Chronos C3");
 int watchBattery = 85;
 Preferences prefs;
+
+#if defined(ENABLE_MAX17048_BATTERY) || defined(ENABLE_CW2015_BATTERY)
+int readBatteryPercent()
+{
+  int percent = watchBattery;
+#ifdef ENABLE_MAX17048_BATTERY
+  for (int i = 0; i < 3; i++)
+  {
+    float soc = batteryGauge.getSoC();
+    if (soc >= 0.0f)
+    {
+      percent = (int)(soc + 0.5f);
+      break;
+    }
+    delay(10);
+  }
+#elif defined(ENABLE_CW2015_BATTERY)
+  float capacity = batteryGauge.capacity();
+  if (capacity > 0.0f)
+  {
+    percent = (int)(capacity + 0.5f);
+  }
+#endif
+  if (percent < 0)
+  {
+    percent = 0;
+  }
+  if (percent > 100)
+  {
+    percent = 100;
+  }
+  return percent;
+}
+
+void updateBatteryLevel()
+{
+  watchBattery = readBatteryPercent();
+  watch.setBattery((uint8_t)watchBattery);
+}
+#else
+void updateBatteryLevel()
+{
+  watch.setBattery((uint8_t)watchBattery);
+}
+#endif
 
 #ifdef ENABLE_APP_QMI8658C
 QMI8658 qmi8658c;
@@ -1038,8 +1084,10 @@ void configCallback(Config config, uint32_t a, uint32_t b)
     // time has been synced from BLE
 #ifdef ENABLE_RTC
     // set the RTC time
-    Rtc.SetDateTime(RtcDateTime(watch.getYear(), watch.getMonth() + 1, watch.getDay(), watch.getHour(true), watch.getMinute(), watch.getSecond()));
-
+    if (rtcAvailable)
+    {
+      Rtc.SetDateTime(RtcDateTime(watch.getYear(), watch.getMonth() + 1, watch.getDay(), watch.getHour(true), watch.getMinute(), watch.getSecond()));
+    }
 #endif
 
 #if ESPS3_2_06
@@ -1377,15 +1425,7 @@ void onCustomFaceSelected(int pathIndex)
   }
 
   // Get battery level when entering home screen with custom face
-#ifdef ENABLE_MAX17048_BATTERY
-  float soc = batteryGauge.getSoC();
-  watch.setBattery((int)soc);
-  watchBattery = (int)soc;
-#elif defined ENABLE_CW2015_BATTERY
-  float capacity = batteryGauge.capacity();
-  watch.setBattery((int)capacity);
-  watchBattery = (int)capacity;
-#endif
+  updateBatteryLevel();
 
   lv_screen_load_anim(ui_home, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, false);
 
@@ -1778,15 +1818,7 @@ void btn_home_handler(Button2 &btn)
       lv_screen_load_anim(ui_home, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
 
       // Get battery level when entering home screen
-#ifdef ENABLE_MAX17048_BATTERY
-      float soc = batteryGauge.getSoC();
-      watch.setBattery((int)soc);
-  watchBattery = (int)soc;
-#elif defined ENABLE_CW2015_BATTERY
-      float capacity = batteryGauge.capacity();
-      watch.setBattery((int)capacity);
-  watchBattery = (int)capacity;
-#endif
+      updateBatteryLevel();
     }
     if (screenTimer.active && screenTimer.duration > 1 && actScr == ui_home)
     {
@@ -1906,6 +1938,7 @@ void hal_setup()
 #endif
 
   tft.init();
+  Serial.println("[DEBUG] tft.init() done");
   tft.initDMA();
   tft.startWrite();
   tft.fillScreen(TFT_BLACK);
@@ -1946,6 +1979,7 @@ void hal_setup()
 #endif
 
   loadSplash();
+  Serial.println("[DEBUG] loadSplash() done");
 
   alert_states = prefs.getInt("alert_states", alert_states);
 
@@ -1956,6 +1990,7 @@ void hal_setup()
   feedbackVibrate(pattern, 4);
 
   lv_init();
+  Serial.println("[DEBUG] lv_init() done");
 
   lv_tick_set_cb(my_tick);
 
@@ -2058,18 +2093,26 @@ void hal_setup()
   watch.setRawDataCallback(rawDataCallback);
   watch.begin();
   watch.set24Hour(true);
+  Serial.println("[DEBUG] watch.begin() done");
 
-  // Initialize I2C and battery gauge
-#if ESPS3_2_06 || ESPS3_1_69
-  Wire.begin(I2C_SDA, I2C_SCL);
+  // Re-confirm I2C bus is still in good state after BLE init
+#if ESPS3_2_06 || ESPS3_1_69 || ESPS3B2_1_83 || ESPS3B3_1_83 || ESPS3_1_28 || ESPS3_1_75 || VIEWE_SMARTRING || VIEWE_KNOB_15
+  Wire.setClock(100000);
+  Serial.println("[DEBUG] Wire confirmed after BLE, SDA=" + String(I2C_SDA) + " SCL=" + String(I2C_SCL));
 #endif
 
 #ifdef ENABLE_MAX17048_BATTERY
-  batteryGauge.begin();
-  float soc = batteryGauge.getSoC();
-  watch.setBattery((int)soc);
-  watchBattery = (int)soc;
-  Serial.printf("MAX17048 - Initial Battery Level: %.2f%%\n", soc);
+  if (batteryGauge.begin())
+  {
+    float soc = batteryGauge.getSoC();
+    float voltage = batteryGauge.getVoltage();
+    Serial.printf("MAX17048 - Initial Battery Level: %.2f%%, Voltage: %.2fV\n", soc, voltage);
+  }
+  else
+  {
+    Serial.println("MAX17048 - Not detected, keeping default battery level");
+  }
+  updateBatteryLevel();
 #elif defined ENABLE_CW2015_BATTERY
   batteryGauge.begin();
 
@@ -2084,11 +2127,8 @@ void hal_setup()
 
   batteryGauge.quickStart();
 
-  float cw_voltage = batteryGauge.voltage();
-  float capacity = batteryGauge.capacity();
-  watch.setBattery((int)capacity);
-  watchBattery = (int)capacity;
-  Serial.printf("CW2015 - Voltage: %.3fV, Battery Level: %.2f%%\n", cw_voltage, capacity);
+  updateBatteryLevel();
+  Serial.printf("CW2015 - Voltage: %.3fV, Battery Level: %d%%\n", batteryGauge.voltage(), watchBattery);
 #else
   watch.setBattery(85);
   watchBattery = 85; // Default value if no battery gauge is enabled
@@ -2190,28 +2230,55 @@ void hal_setup()
     Serial.println("Drive S is not ready");
   }
 
+  Serial.println("[DEBUG] before imu_init");
   imu_init();
+  Serial.println("[DEBUG] after imu_init");
 
 #ifdef ENABLE_RTC
+  Serial.println("[DEBUG] before Rtc.Begin()");
   Rtc.Begin();
+  Serial.println("[DEBUG] after Rtc.Begin()");
 
-  if (!Rtc.GetIsRunning())
+  bool clockRunning = Rtc.GetIsRunning();
+  Serial.println("[DEBUG] after Rtc.GetIsRunning(), error=" + String(Rtc.LastError()));
+  bool rtcPresent = (Rtc.LastError() == Rtc_Wire_Error_None);
+  rtcAvailable = rtcPresent;
+
+  if (rtcPresent)
   {
-    uint8_t error = Rtc.LastError();
-    if (error != 0)
+    if (!clockRunning)
     {
-      showError("RTC", "Error on RTC");
+      Serial.println("RTC - clock stopped, starting it");
+      Rtc.SetIsRunning(true);
     }
-    Rtc.SetIsRunning(true);
+
+    RtcDateTime now = Rtc.GetDateTime();
+
+    if (Rtc.LastError() == Rtc_Wire_Error_None)
+    {
+      Serial.printf("RTC - %04d-%02d-%02d %02d:%02d:%02d\n",
+                    now.Year(), now.Month(), now.Day(),
+                    now.Hour(), now.Minute(), now.Second());
+      watch.setTime(now.Second(), now.Minute(), now.Hour(), now.Day(), now.Month(), now.Year());
+    }
+
+    Rtc.StopAlarm();
+    Rtc.StopTimer();
+    Rtc.SetSquareWavePin(PCF8563SquareWavePinMode_None);
   }
-
-  RtcDateTime now = Rtc.GetDateTime();
-
-  watch.setTime(now.Second(), now.Minute(), now.Hour(), now.Day(), now.Month(), now.Year());
-
-  Rtc.StopAlarm();
-  Rtc.StopTimer();
-  Rtc.SetSquareWavePin(PCF8563SquareWavePinMode_None);
+  else
+  {
+    wasError("RTC");
+    Serial.println("RTC - 0x51 not responding, scanning I2C bus:");
+    for (uint8_t addr = 1; addr < 127; addr++)
+    {
+      Wire.beginTransmission(addr);
+      if (Wire.endTransmission() == 0)
+      {
+        Serial.printf("RTC scan: device found at 0x%02X\n", addr);
+      }
+    }
+  }
 #endif
 
 #if ESPS3_2_06
@@ -2308,17 +2375,7 @@ void hal_loop()
       static unsigned long lastBatteryUpdate = 0;
       if (millis() - lastBatteryUpdate > 60000)
       { // Update every minute
-#ifdef ENABLE_MAX17048_BATTERY
-        float soc = batteryGauge.getSoC();
-        watch.setBattery((int)soc);
-  watchBattery = (int)soc;
-        Serial.printf("MAX17048 - Updated Battery Level: %.2f%%\n", soc);
-#elif defined ENABLE_CW2015_BATTERY
-        float capacity = batteryGauge.capacity();
-        watch.setBattery((int)capacity);
-  watchBattery = (int)capacity;
-        Serial.printf("CW2015 - Voltage: %.3fV, Battery Level: %.2f%%\n", batteryGauge.voltage(), capacity);
-#endif
+        updateBatteryLevel();
         lastBatteryUpdate = millis();
       }
     }
@@ -2475,19 +2532,11 @@ void hal_loop()
           // Enter light sleep mode only on the home/clock screen
           esp_light_sleep_start();
 
-          // Get battery level after waking up
-#ifdef ENABLE_MAX17048_BATTERY
-          float soc = batteryGauge.getSoC();
-          watch.setBattery((int)soc);
-  watchBattery = (int)soc;
-#elif defined ENABLE_CW2015_BATTERY
-          float capacity = batteryGauge.capacity();
-          watch.setBattery((int)capacity);
-  watchBattery = (int)capacity;
-#endif
-          
-          // Wait a short time for Bluetooth to reconnect
+          // Wait a short time for Bluetooth to reconnect after waking up
           delay(500);
+
+          // Get battery level after waking up
+          updateBatteryLevel();
           
           // Turn on backlight
           uint8_t lvl = lv_slider_get_value(ui_brightnessSlider);
