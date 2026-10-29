@@ -4,7 +4,7 @@
 #ifdef NO_WATCHFACES
 
 
-#elif defined(ESPS3_1_69) || defined(ELECROW_S3) || defined(ESP32_CYD) || defined(VIEWE_2_8)
+#elif defined(ESPS3_1_69) ||  defined(ESPS3B2_1_83) ||  defined(ESPS3B3_1_83) || defined(ELECROW_S3) || defined(ESP32_CYD) || defined(VIEWE_2_8)
 // 240x280 watchfaces
 
 #define ENABLE_FACE_174 // (174)
@@ -19,6 +19,9 @@
 #define ENABLE_FACE_2051 // (2051)
 #define ENABLE_FACE_3589 // (3589)
 #endif
+#define ENABLE_FACE_KENYA // (Kenya)
+#define ENABLE_FACE_TIX_RESIZED // (Tix)
+#define ENABLE_FACE_WFB_RESIZED // (WFB)
 
 #elif defined(ESPS3_2_06)
 #define ENABLE_FACE_174_410 // (174)
@@ -62,12 +65,12 @@
 
 #endif
 
-#if defined(ESPS3_1_69) || defined(ESPS3_1_28) || defined(VIEWE_SMARTRING) || defined(ESPS3_1_75) || defined(ESPS3_2_06)
+#if defined(ESPS3_1_69) ||  defined(ESPS3B2_1_83) ||  defined(ESPS3B3_1_83) || defined(ESPS3_1_28) || defined(VIEWE_SMARTRING) || defined(ESPS3_1_75) || defined(ESPS3_2_06)
 #define ENABLE_APP_QMI8658C
 #define ENABLE_APP_ATTITUDE
 #endif
 
-#if defined(ELECROW_C3) || defined(ELECROW_S3)
+#if defined(ELECROW_C3) || defined(ELECROW_S3) ||  defined(ESPS3B2_1_83) ||  defined(ESPS3B3_1_83)
 #define ENABLE_RTC
 
 #ifndef ENABLE_FACE_ELECROW
@@ -85,8 +88,8 @@
 #define ENABLE_APP_CALENDAR
 #define ENABLE_APP_SAMPLE
 #define ENABLE_APP_TOUCH_TEST
-// #define ENABLE_GAME_TASK
-// #define ENABLE_GAME_RACING
+#define ENABLE_GAME_TASK
+#define ENABLE_GAME_RACING
 
 #define ENABLE_GAME_SIMON
 
@@ -95,8 +98,8 @@
 #define ENABLE_APP_TIMER
 
 // 电池电量计支持选项
-// #define ENABLE_MAX17048_BATTERY  // 启用MAX17048电池电量计
-#define ENABLE_CW2015_BATTERY  // 启用CW2015电池电量计（与MAX17048二选一）
+#define ENABLE_MAX17048_BATTERY  // 启用MAX17048电池电量计
+// #define ENABLE_CW2015_BATTERY  // 启用CW2015电池电量计（与MAX17048二选一）
 
 #ifdef __cplusplus
 extern "C" {

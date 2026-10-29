@@ -21,7 +21,9 @@ class LGFX : public lgfx::LGFX_Device
   lgfx::Panel_ST7789  _panel_instance;
   lgfx::Light_PWM _light_instance;
   lgfx::Bus_SPI _bus_instance;
-  // lgfx::Touch_CST816S _touch_instance;
+#if ESPS3B2_1_83
+  lgfx::Touch_CST816S _touch_instance;
+#endif
 
 public:
   LGFX(void)
@@ -85,27 +87,28 @@ public:
       _panel_instance.setLight(&_light_instance); // Sets the backlight to the panel.
     }
     
+#if ESPS3B2_1_83
+    { // Sets touchscreen control. (Delete if not needed)
 
-    // { // Sets touchscreen control. (Delete if not needed)
+      auto cfg = _touch_instance.config();
+      cfg.x_min = 0;        // Minimum X value obtained from touch screen (raw value)
+      cfg.x_max = SCREEN_WIDTH;    // Maximum X value obtained from touch screen (raw value)
+      cfg.y_min = 0;        // Minimum Y value obtained from touch screen (raw value)
+      cfg.y_max = SCREEN_HEIGHT;   // Maximum Y value obtained from touch screen (raw value)
+      cfg.pin_int = TP_INT; // Pin number to which INT is connected
+      cfg.pin_rst = TP_RST;
+      cfg.bus_shared = false;   // Set true if using a common bus with the screen
+      cfg.offset_rotation = 0; // Adjust if display and touch orientation do not match. Set to a value between 0 and 7
 
-    //   auto cfg = _touch_instance.config();
-    //   cfg.x_min = 0;        // Minimum X value obtained from touch screen (raw value)
-    //   cfg.x_max = SCREEN_WIDTH;    // Maximum X value obtained from touch screen (raw value)
-    //   cfg.y_min = 0;        // Minimum Y value obtained from touch screen (raw value)
-    //   cfg.y_max = SCREEN_HEIGHT;   // Maximum Y value obtained from touch screen (raw value)
-    //   cfg.pin_int = TP_INT; // Pin number to which INT is connected
-    //   cfg.pin_rst = TP_RST;
-    //   cfg.bus_shared = true;   // Set true if using a common bus with the screen
-    //   cfg.offset_rotation = 0; // Adjust if display and touch orientation do not match. Set to a value between 0 and 7
-
-    //   cfg.i2c_port = 0;      // Select the I2C to use (0 or 1)
-    //   cfg.i2c_addr = 0x15;   // I2C device address number
-    //   cfg.pin_sda = I2C_SDA; // Pin number to which SDA is connected
-    //   cfg.pin_scl = I2C_SCL; // Pin number to which SCL is connected
-    //   cfg.freq = 400000;     // Set the I2C clock
-    //   _touch_instance.config(cfg);
-    //   _panel_instance.setTouch(&_touch_instance); // Set the touch screen to the panel.
-    // }
+      cfg.i2c_port = 0;      // Select the I2C to use (0 or 1)
+      cfg.i2c_addr = 0x15;   // I2C device address number
+      cfg.pin_sda = I2C_SDA; // Pin number to which SDA is connected
+      cfg.pin_scl = I2C_SCL; // Pin number to which SCL is connected
+      cfg.freq = 100000;     // Set the I2C clock
+      _touch_instance.config(cfg);
+      _panel_instance.setTouch(&_touch_instance); // Set the touch screen to the panel.
+    }
+#endif
 
     setPanel(&_panel_instance); // Set the panel to use.
   }

@@ -193,6 +193,82 @@
 #define BUTTON_HOME 0
 #define MAX_FILE_OPEN 20
 
+#elif ESPS3B2_1_83
+
+// screen configs
+#define SCREEN_WIDTH 240
+#define SCREEN_HEIGHT 284
+#define OFFSET_X 0
+#define OFFSET_Y 0
+#define RGB_ORDER false
+
+// touch
+#define I2C_SDA 1
+#define I2C_SCL 2
+#define TP_INT 46
+#define TP_RST 7
+
+// display
+#define LGFX_SPI_DEFAULT_INSTANCE SPI3_HOST
+
+#define SCLK 5
+#define MOSI 6
+#define MISO -1
+#define DC 11
+#define CS 12
+#define RST -1
+
+#define BL 47
+#define VIBRATION_PIN 4
+#define BUTTON_HOME 0
+#define MAX_FILE_OPEN 20
+
+#define I2S_MCLK 21
+#define I2S_WS 14
+#define I2S_BCLK 18
+#define I2S_DIN  17
+#define I2S_DOUT 13
+
+#define PA_PIN       48
+
+#elif ESPS3B3_1_83
+
+// screen configs
+#define SCREEN_WIDTH 240
+#define SCREEN_HEIGHT 284
+#define OFFSET_X 0
+#define OFFSET_Y 0
+#define RGB_ORDER false
+
+// touch
+#define I2C_SDA 1
+#define I2C_SCL 2
+#define TP_INT 46
+#define TP_RST 7
+
+// display
+#define LGFX_SPI_DEFAULT_INSTANCE SPI3_HOST
+
+#define SCLK 5
+#define MOSI 6
+#define MISO -1
+#define DC 11
+#define CS 12
+#define RST -1
+
+#define BL 47
+#define VIBRATION_PIN 4
+#define BUTTON_HOME 0
+#define MAX_FILE_OPEN 20
+
+#define I2S_MCLK 21
+#define I2S_WS 14
+#define I2S_BCLK 18
+#define I2S_DIN  17
+#define I2S_DOUT 13
+
+#define PA_PIN       48
+
 #elif ESPS3_2_06
 
 #define SCREEN_WIDTH 410

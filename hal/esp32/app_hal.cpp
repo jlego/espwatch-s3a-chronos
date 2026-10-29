@@ -2038,7 +2038,7 @@ void hal_setup()
     lv_obj_scroll_to_view(lv_obj_get_child(ui_faceSelect, wf), LV_ANIM_OFF);
   }
 
-#if defined(ESPS3_1_69) || defined(ELECROW_S3) || defined(ESP32_CYD)
+#if defined(ESPS3B2_1_83) ||  defined(ESPS3B3_1_83) || defined(ESPS3_1_69) || defined(ELECROW_S3) || defined(ESP32_CYD)
   watch.setScreen(CS_240x296_191_RTF);
 #elif defined(ESPS3_2_06)
   watch.setScreen(CS_410x494_200_RTF);
@@ -2060,7 +2060,9 @@ void hal_setup()
   watch.set24Hour(true);
 
   // Initialize I2C and battery gauge
+#if ESPS3_2_06 || ESPS3_1_69
   Wire.begin(I2C_SDA, I2C_SCL);
+#endif
 
 #ifdef ENABLE_MAX17048_BATTERY
   batteryGauge.begin();
