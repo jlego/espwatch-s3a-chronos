@@ -67,7 +67,7 @@
 #define ENABLE_APP_ATTITUDE
 #endif
 
-#if defined(ELECROW_C3) || defined(ELECROW_S3) ||  defined(ESPS3B2_1_83) ||  defined(ESPS3B4_1_83)
+#if defined(ELECROW_C3) || defined(ELECROW_S3) || defined(ESPS3B4_1_83)
 #define ENABLE_RTC
 
 #ifndef ENABLE_FACE_ELECROW
@@ -95,8 +95,8 @@
 #define ENABLE_APP_TIMER
 
 // 电池电量计支持选项
-// #define ENABLE_MAX17048_BATTERY  // 启用MAX17048电池电量计
-#define ENABLE_CW2015_BATTERY  // 启用CW2015电池电量计（与MAX17048二选一）
+#define ENABLE_MAX17048_BATTERY  // 启用MAX17048电池电量计
+// #define ENABLE_CW2015_BATTERY  // 启用CW2015电池电量计（与MAX17048二选一）
 
 #ifdef __cplusplus
 extern "C" {

@@ -21,7 +21,7 @@ class LGFX : public lgfx::LGFX_Device
   lgfx::Panel_ST7789  _panel_instance;
   lgfx::Light_PWM _light_instance;
   lgfx::Bus_SPI _bus_instance;
-#if ESPS3B2_1_83
+#if ESPS3B2_1_83 || ESPS3B4_1_83
   lgfx::Touch_CST816S _touch_instance;
 #endif
 
@@ -87,7 +87,7 @@ public:
       _panel_instance.setLight(&_light_instance); // Sets the backlight to the panel.
     }
     
-#if ESPS3B2_1_83
+#if ESPS3B2_1_83 || ESPS3B4_1_83
     { // Sets touchscreen control. (Delete if not needed)
 
       auto cfg = _touch_instance.config();

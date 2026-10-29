@@ -2073,7 +2073,7 @@ void hal_setup()
     lv_obj_scroll_to_view(lv_obj_get_child(ui_faceSelect, wf), LV_ANIM_OFF);
   }
 
-#if defined(ESPS3B2_1_83) ||  defined(ESPS3B3_1_83) || defined(ESPS3_1_69) || defined(ELECROW_S3) || defined(ESP32_CYD)
+#if defined(ESPS3B2_1_83) ||  defined(ESPS3B4_1_83) || defined(ESPS3_1_69) || defined(ELECROW_S3) || defined(ESP32_CYD)
   watch.setScreen(CS_240x296_191_RTF);
 #elif defined(ESPS3_2_06)
   watch.setScreen(CS_410x494_200_RTF);
@@ -2096,7 +2096,7 @@ void hal_setup()
   Serial.println("[DEBUG] watch.begin() done");
 
   // Re-confirm I2C bus is still in good state after BLE init
-#if ESPS3_2_06 || ESPS3_1_69 || ESPS3B2_1_83 || ESPS3B3_1_83 || ESPS3_1_28 || ESPS3_1_75 || VIEWE_SMARTRING || VIEWE_KNOB_15
+#if ESPS3_2_06 || ESPS3_1_69 || ESPS3B2_1_83 || ESPS3B4_1_83 || ESPS3_1_28 || ESPS3_1_75 || VIEWE_SMARTRING || VIEWE_KNOB_15
   Wire.setClock(100000);
   Serial.println("[DEBUG] Wire confirmed after BLE, SDA=" + String(I2C_SDA) + " SCL=" + String(I2C_SCL));
 #endif
