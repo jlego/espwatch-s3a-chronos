@@ -291,7 +291,7 @@
 #define TOUCH_IRQ 39
 
 #define BUTTON_HOME 0
-#define VIBRATION_PIN 9
+#define VIBRATION_PIN 11
 #define MAX_FILE_OPEN 10
 
 #elif M5_STACK_DIAL
