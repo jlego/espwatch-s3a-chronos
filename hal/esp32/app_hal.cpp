@@ -472,6 +472,20 @@ String heapUsage()
   return usage;
 }
 
+void dbg(const char *msg)
+{
+  Serial.println(msg);
+  Serial.flush();
+  Serial1.println(msg);
+  Serial1.flush();
+}
+
+void dbgHeap(const char *tag)
+{
+  Serial.printf("[DBG] %s heap=%u minHeap=%u\n", tag, (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMinFreeHeap());
+  Serial.flush();
+}
+
 void *sd_open_cb(lv_fs_drv_t *drv, const char *path, lv_fs_mode_t mode)
 {
   char buf[256];
@@ -687,15 +701,15 @@ void deleteFile(const char *path)
 bool setupFS()
 {
 
-#ifndef ENABLE_CUSTOM_FACE
-  return false;
-#endif
-
   if (!FLASH.begin(true, "/ffat", MAX_FILE_OPEN))
   {
+    Serial.println("- mounting failed, formatting");
     FLASH.format();
 
-    return false;
+    if (!FLASH.begin(true, "/ffat", MAX_FILE_OPEN))
+    {
+      return false;
+    }
   }
 
   static lv_fs_drv_t sd_drv;
@@ -710,9 +724,11 @@ bool setupFS()
   sd_drv.tell_cb = sd_tell_cb;
   lv_fs_drv_register(&sd_drv);
 
+#ifdef ENABLE_CUSTOM_FACE
   checkLocal(true); // parse new faces
 
   checkLocal(); // register the local faces
+#endif
 
   return true;
 }
@@ -1905,11 +1921,13 @@ void hal_setup()
 {
 
   Serial.begin(115200); /* prepare for possible serial debug */
+  Serial.setTxTimeoutMs(0); // never block on USB CDC writes
   Serial1.begin(115200);
 
   Timber.setOutput(logCallback);
 
   Timber.i("Starting up device");
+  dbg("[BOOT] 01 serial ready");
 
   prefs.begin("my-app");
 
@@ -2025,9 +2043,13 @@ void hal_setup()
 
   // _lv_fs_init();
 
+  dbg("[BOOT] 02 before ui_init");
   ui_init();
+  dbg("[BOOT] 03 after ui_init");
 
+  dbg("[BOOT] 04 before setupFS");
   bool fsState = setupFS();
+  dbg("[BOOT] 05 after setupFS");
   if (fsState)
   {
     // driveList_cb(NULL);
@@ -2041,7 +2063,9 @@ void hal_setup()
     // showError(F_NAME, "Failed to mount the partition");
   }
 
+  Serial.println("[DEBUG] reading watchface pref");
   int wf = prefs.getInt("watchface", 0);
+  Serial.println("[DEBUG] watchface pref=" + String(wf) + " numFaces=" + String(numFaces));
 #ifdef ENABLE_CUSTOM_FACE
   String custom = prefs.getString("custom", "");
   if (wf >= numFaces)
@@ -2065,13 +2089,16 @@ void hal_setup()
   currentIndex = wf;
   ui_home = *faces[wf].watchface; // load saved watchface power on
 #endif
+  Serial.println("[DEBUG] before lv_screen_load(ui_home)");
   lv_screen_load(ui_home);
+  Serial.println("[DEBUG] after lv_screen_load(ui_home)");
 
   int ch = lv_obj_get_child_count(ui_faceSelect);
   if (wf < ch)
   {
     lv_obj_scroll_to_view(lv_obj_get_child(ui_faceSelect, wf), LV_ANIM_OFF);
   }
+  Serial.println("[DEBUG] face select scrolled");
 
 #if defined(ESPS3B2_1_83) ||  defined(ESPS3B4_1_83) || defined(ESPS3_1_69) || defined(ELECROW_S3) || defined(ESP32_CYD)
   watch.setScreen(CS_240x296_191_RTF);
@@ -2081,9 +2108,11 @@ void hal_setup()
   watch.setScreen(CS_466x466_143_CTF);
 #endif
   chip = String(ESP.getChipModel()); // Assign to global variable
+  Serial.println("[DEBUG] chip=" + chip);
   watch.setName(chip);
 #ifdef BOARD_NAME
   watch.setName(BOARD_NAME);
+  Serial.println("[DEBUG] board name set");
 #endif
   watch.setConnectionCallback(connectionCallback);
   watch.setNotificationCallback(notificationCallback);
@@ -2091,9 +2120,44 @@ void hal_setup()
   watch.setRingerCallback(ringerCallback);
   watch.setDataCallback(dataCallback);
   watch.setRawDataCallback(rawDataCallback);
-  watch.begin();
+  Serial.println("[DEBUG] before watch.begin()");
+  Serial.printf("[DEBUG] heap before BLE: free=%u, psram=%u\n",
+    ESP.getFreeHeap(), ESP.getFreePsram());
+  Serial.flush();
+
+#if 1
+  // TEMP: skip BLE init to verify non-BLE startup path
+  Serial.println("[BLE] SKIPPED - testing non-BLE startup");
+#else
+  {
+    static volatile int bleResult = -1;
+    bleResult = -1;
+    auto bleInitTask = [](void*) {
+      Serial.println("[BLE] task start on core");
+      Serial.flush();
+      watch.begin();
+      Serial.println("[BLE] watch.begin() returned");
+      Serial.flush();
+      bleResult = 0;
+      vTaskDelete(NULL);
+    };
+    xTaskCreatePinnedToCore(bleInitTask, "ble_init", 8192, NULL, 1, NULL, 0);
+
+    unsigned long startWait = millis();
+    while (bleResult < 0 && millis() - startWait < 8000) {
+      delay(200);
+    }
+
+    if (bleResult == 0) {
+      Serial.println("[BLE] init succeeded");
+    } else {
+      Serial.println("[BLE] init TIMED OUT after 8s - continuing without BLE");
+    }
+  }
+#endif
+  Serial.println("[DEBUG] after watch.begin()");
+  Serial.flush();
   watch.set24Hour(true);
-  Serial.println("[DEBUG] watch.begin() done");
 
   // Re-confirm I2C bus is still in good state after BLE init
 #if ESPS3_2_06 || ESPS3_1_69 || ESPS3B2_1_83 || ESPS3B4_1_83 || ESPS3_1_28 || ESPS3_1_75 || VIEWE_SMARTRING || VIEWE_KNOB_15
@@ -2337,6 +2401,13 @@ void hal_setup()
 
 void hal_loop()
 {
+
+  static bool firstLoop = true;
+  if (firstLoop)
+  {
+    firstLoop = false;
+    dbg("[BOOT] 09 first hal_loop entry (setup finished)");
+  }
 
   if (!transfer)
   {
